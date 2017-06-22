@@ -9,5 +9,4 @@ FinalProject.pdf is the write up for this assignment.
 
 The HTML files for the interactive Visualization is Part.html
 This holds the html for the vis as well as the script.
-
-To run the visualization start a local server in the directory of the html file and open the html in a browser.
+Got eem
