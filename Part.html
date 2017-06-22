@@ -1,0 +1,404 @@
+<html>
+<head>
+<script src="http://d3js.org/d3.v3.js" charset="utf-8"></script>
+<title>Part</title>
+<style type="text/css">
+	svg {
+		font-family: sans-serif;
+		font-size: 11px;
+	}
+
+	h1 {
+    position: absolute;
+    left: 125px;
+    top: 10px;
+	}
+	
+	h3 {
+    position: absolute;
+    left: 280px;
+    top: 80px;
+	font-family: sans-serif;
+		font-size: 11px;
+		font-size: 12px;
+		font-weight: bold;
+	}
+	
+	#drop {
+    position: absolute;
+    left: 500px;
+    top: 80px;
+	}
+	
+	.rectangle {
+	fill: black;
+	opacity: .15;
+	}
+
+	.rectangle:hover {
+		fill: orange;
+	}
+	
+	.axis path,
+	.axis line {
+		fill: none;
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+
+	.line {
+		fill: none; 
+		stroke: #000;
+		shape-rendering: crispEdges;
+	}
+
+	.label {
+		text-anchor: middle;
+		font-size: 12px;
+		font-weight: bold;
+		cursor: pointer;
+	}
+	
+	#input1{
+		position: absolute;
+		left: 280px;
+		top: 530px;
+	}
+	
+	
+	#input2{
+		position: absolute;
+		left: 280px;
+		top: 550px;
+	}
+	
+</style>
+</head>
+
+<body>
+	<h1 style='font-family:verdana;'> Relationship between Produce Availibilty and Nutrition</h1>
+	<h3 id='legend'> Pounds of Produce </h3>
+	<div id="drop" align=center></div>
+	<div id='pointsSVG'>
+	</div>
+	<div id="input1">
+	<input type='checkbox' class='myCheckbox' value='Iron' font color='crimson' checked> 
+	<font color='crimson'> Iron </font/>
+    <input type='checkbox' class='myCheckbox' value='Calcium' checked> 
+	<font color='navy'> Calcium </font/>
+	<input type='checkbox' class='myCheckbox' value='Potassium' checked>
+	<font color='steelblue'> Potassium </font/>
+	<input type='checkbox' class='myCheckbox' value='Vitamin E' checked> 
+	<font color='chartreuse'> Vitamin E </font/>
+	<input type='checkbox' class='myCheckbox' value='Vitamin A' checked>
+	<font color='deepskyblue'> Vitamin A </font/>
+	<input type='checkbox' class='myCheckbox' value='Vitamin B6' checked> Vitamin B6
+	</div>
+	
+	<div id="input2">
+	<input type='checkbox' class='myCheckbox' value='Dietary Fiber' checked> 
+	<font color='mediumpurple'>Dietary Fiber </font/>
+    <input type='checkbox' class='myCheckbox' value='Cholesterol' checked> 
+	<font color='peru'>Cholesterol </font/>
+	<input type='checkbox' class='myCheckbox' value='Phosphorous' checked>
+	<font color='olive'>Phosphorous </font/>
+	<input type='checkbox' class='myCheckbox' value='Niacin' checked> 
+	<font color='khaki'>Niacin </font/>
+	<input type='checkbox' class='myCheckbox' value='Sodium' checked>
+	<font color='springgreen'>Sodium </font/>
+	</div>
+	
+		
+	<script>
+
+/*
+ * Wisdom Akpan 6/3/2017
+ *
+ * The dynamic axes strongly influenced by Jonah William's 2016 project https://gist.github.com/jonahwilliams/2f16643b999ada7b1909
+ * Scatterplot and barchart componenets reused from previous prohjects with Lindsey Chavez and Eric Alexander
+ * Data Sets were combined manually from individual sets downloade from DataPlanet
+ */
+
+margin = {top: 80, right: 60, bottom: 80, left: 270},
+width = 960 - margin.left - margin.right,
+height = 500 - margin.top - margin.bottom;			
+xOffset = 30;		// Space for x-axis labels
+yOffset = 0;      //Space for y-axis labels
+
+vals = ['Time', 'Milligrams of Nutrient', 'Nutrient Type'];
+xVal = vals[0]; // set year of calculation as the x axis
+yVal = vals[1]; // set milligrams of nutrient per capita as the y axis
+nutVal = vals[2]; //the type of nutrients
+
+	
+
+
+svg = d3.select('#pointsSVG').append('svg:svg')
+	.attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+	.append("g")
+	//appending tranformational component to the svg for the zoom feature
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")"); 
+
+//Makes Scatterplot svg components
+d3.csv('Produce.csv', function(csvData){
+data = csvData;
+		
+	
+	
+	var elements = Object.keys(data[0])// returns an array of strings that will be filtered
+		.filter(function(d){
+			return (d != "time"); //filtering the array values by time
+		});
+	
+	var selection = elements[0]; 
+
+	y = d3.scale.linear() //set y scale to be dynamic
+			.domain([0, d3.max(data, function(d){
+				return +d[selection];
+			})])
+			.range([height, 0]);
+
+	x = d3.scale.ordinal() //more static x axis
+			.domain(data.map(function(d){ return d.time;}))
+			.rangeBands([0, width]);
+
+//set axes
+    xAxis = d3.svg.axis()
+		.scale(x)
+	    .orient("bottom");
+		
+	yAxis = d3.svg.axis()
+		.scale(y)
+	    .orient("right");
+
+	
+	
+//draw rectangels updatebly
+	svg.selectAll("rectangle")
+		.data(data)
+		.enter()
+		.append("rect")
+		.attr("class","rectangle")
+		.attr("width", (width-140)/data.length)
+		.attr("height", function(d){
+			return height - y(+d[selection]);
+		})
+		.attr("x", function(d, i){
+			return (width / data.length) * i +8;
+		})
+		.attr("y", function(d){
+			return y(+d[selection]);
+		})
+		.append("title")
+		.text(function(d){
+			return "Year: " + d.time + "   lbs/capita : " + d[selection];
+		});
+
+		//add axes and labels
+		svg.append("g")
+    	.attr("class", "x axis")
+    	.attr("transform", "translate(0," + height + ")")
+    	.call(xAxis)
+    	.selectAll("text")
+    	.style("font-size", "8px")
+      	.style("text-anchor", "end")
+      	.attr("dx", "-.8em")
+      	.attr("dy", "-.55em")
+      	.attr("transform", "rotate(-90)" );
+
+
+		svg.append("g")
+			.attr("class", "y axis")
+			.call(yAxis);
+	
+	//GUI drop down menu of produce
+	var selector = d3.select("#drop")
+    	.append("select")
+    	.attr("id","dropdown")
+    	.on("change", function(d){
+        	selection = document.getElementById("dropdown");
+
+        	y.domain([0, d3.max(data, function(d){
+				return +d[selection.value];})]);
+
+        	yAxis.scale(y);
+
+        	d3.selectAll(".rectangle") //rectangle colors are already determined in the css
+           		.transition()
+	            .attr("height", function(d){
+					return height - y(+d[selection.value]);
+				})
+				.attr("x", function(d, i){
+					return (width / data.length) * i;
+				})
+				.attr("y", function(d){
+					return y(+d[selection.value]);
+				})
+           		.ease("linear")
+           		.select("title")
+				.text(function(d){
+           			return d.time + " : " + d[selection.value];
+           		});
+      
+           	d3.selectAll("g.y.axis")
+           		.transition()
+           		.call(yAxis);
+
+         });
+
+    selector.selectAll("option")
+      .data(elements)
+      .enter().append("option")
+      .attr("value", function(d){
+        return d;
+      })
+      .text(function(d){
+        return d;
+      })
+
+
+});
+
+//Makes Bar Chart svg components
+d3.csv('test.csv', function(csvData){
+
+	data2 = csvData;
+
+	
+	 
+	//Zoom to svg
+	svg.call(d3.behavior.zoom().scaleExtent([1, 8]).on("zoom", zoom))
+	
+		
+
+	//set axes and titles
+	    xScale = d3.scale.linear()
+				.domain([d3.min(data2, function(d) { return parseFloat(d[xVal]); })-1,
+						 d3.max(data2, function(d) { return parseFloat(d[xVal]); })+1])
+				.range([yOffset + 10, width - 10]);
+				
+	    xAxis = d3.svg.axis()
+				.scale(xScale)
+				.orient('bottom')
+				.ticks(0);
+			
+				
+	    xAxisG = svg.append('g')
+				.attr('class', 'axis')
+				.attr('transform', 'translate(0,' + (height + xOffset) + ')')
+				.call(xAxis);
+				
+        xLabel = svg.append('text')
+				.attr('class','label')
+				.attr('x', width/2 + 10)
+				.attr('y', height + 45)
+				.text(xVal);
+			
+			
+		yScale = d3.scale.linear()
+				.domain([d3.min(data2, function(d) { return parseFloat(d[yVal]); })-1,
+						d3.max(data2, function(d) { return parseFloat(d[yVal]); })+1])
+				.range([height - 10, 10]); 
+				    
+		yAxis = d3.svg.axis()
+				.scale(yScale)
+				.orient('left')
+				.ticks(8);
+				
+						
+	    yAxisG = svg.append('g')
+				.attr('class', 'axis')
+				.attr('transform', 'translate(' + yOffset + ',0)')
+				.call(yAxis);
+				
+	    yLabel = svg.append('text')
+				.attr('class','label')
+				.attr('x', yOffset/10 - 160)
+				.attr('y', height/3 - 165)
+				.attr("transform", "rotate(-90)" )
+				.text(yVal);
+				
+		
+	 circle = svg.selectAll('.dot')
+        .data(data2)
+   //creates points for the scatterplot     
+    circle.enter()
+        .append('circle')
+        .attr('r', 2.5)
+		.attr('cx', function(d) { return xScale(d[xVal]) -15; })        
+        .attr('cy', function(d) { return yScale(d[yVal]); })
+		.attr('class', function(d) { return 'dot Year' + d[xVal]; })
+		.attr("transform", function(d) { return "translate(" + d + ")"; })	
+      // Color each point based on Nutrient type
+		.style('fill', function(d) {
+			if(d[nutVal]=== 'Iron') {return 'crimson'} 
+			if(d[nutVal]=== 'Potassium') {return 'steelblue'}
+			if(d[nutVal]=== 'Vitamin B6') {return 'magenta'} 
+			if(d[nutVal]=== 'Niacin') {return 'khaki'} 
+			if(d[nutVal]=== 'Calcium') {return 'navy'}
+			if(d[nutVal]=== 'Vitamin E') {return 'chartreuse'}
+			if(d[nutVal]=== 'Vitamin A') {return 'deepskyblue'}
+			if(d[nutVal]=== 'Dietary Fiber') {return 'mediumpurple'}
+			if(d[nutVal]=== 'Cholesterol') {return 'peru'}
+			if(d[nutVal]=== 'Phosphorous') {return 'olive'}
+			if(d[nutVal]=== 'Sodium') {return 'springgreen'}
+		;}) 		
+		
+		
+        .on('mouseover', function(d) {
+            d3.selectAll('.Year' + d[xVal])
+                .attr('r', 5)})       
+
+        .on('mouseout', function(d) {
+            d3.selectAll('.Year' + d[xVal])
+               .attr('r', 2.5)})
+			
+				
+		circle.append('svg:title')
+        .text(function(d) {return 'Year: ' + d[xVal] + '    mg/Capita per Day: ' + d[yVal];})
+		
+		//tests checkboxes and sets unchecked ones transluscent 	
+		d3.selectAll('.myCheckbox').on('change', function () {
+		var selected = this.value, 
+		opacity = this.checked ? 1 : 0;
+		//yChange();
+		var whatever=svg.selectAll('.dot')
+		.filter(function(d) { return d[nutVal] === selected; })
+		.style("fill-opacity", opacity)
+	
+		});
+	
+	/* function yChange() {
+		var value = this.yVal // get the new y value
+		yScale // change the yScale
+		  .domain([
+			d3.min([0,d3.min(data2,function (d) { return d[yVal] })]),
+			d3.max([0,d3.max(data2,function (d) { return d[yVal] })])
+			])
+		yAxis.scale(yScale) // change the yScale
+		d3.select('axis') // redraw the yAxis
+		  .transition().duration(10)
+		  .call(yAxis)
+		d3.select('label') // change the yAxisLabel
+		  .text(value)    
+		d3.selectAll('.dot') // move the circles
+		  .transition().duration(10)
+		  .delay(function (d,i) { return i*5})
+			.attr('cy',function (d) { return yScale(d[yVal]) })
+  }*/
+	
+	
+});
+
+
+function zoom() {
+  svg.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+}
+
+	</script>
+	
+</body>
+
+
+</html>
